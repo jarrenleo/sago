@@ -1,0 +1,19 @@
+{
+  "name": "best_tickets",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "jaleo",
+  "license": "ISC",
+  "description": "Discord bot script that finds the best tickets for a given event ID and cart time to live.",
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "lodash.sortby": "^4.7.0"
+  }
+}
