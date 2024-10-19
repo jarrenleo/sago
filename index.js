@@ -62,30 +62,18 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
       if (expiredCheckout) return data;
 
       const embedData = embed[0].data;
-      const embedEventId = embedData.fields
-        .find((field) => field.name === "Event ID")
-        .value.toLowerCase();
+      const embedEventId = embedData.fields[2].value.toLowerCase();
       if (eventId !== embedEventId) continue;
 
       data.push({
-        session: embedData.fields.find((field) => field.name === "Session")
-          .value,
-        quantity: embedData.fields.find((field) => field.name === "Quantity")
-          .value,
-        account: embedData.fields
-          .find((field) => field.name === "Account")
-          .value.slice(2, -2),
-        promo_code: embedData.fields
-          .find((field) => field.name === "Promo Code")
-          .value.slice(2, -2),
-        location: embedData.fields
-          .find((field) => field.name === "Location")
-          .value.split(",")
-          .join(" +"),
-        price: embedData.fields.find((field) => field.name === "Price").value,
-        checkout_link: embedData.fields
-          .find((field) => field.name === "Checkout Link")
-          .value.slice(2, -2),
+        session: embedData.fields[4].value,
+        quantity: embedData.fields[6].value,
+        account: embedData.fields[7].value.slice(2, -2),
+        promo_code: embedData.fields[9].value.slice(2, -2),
+        location: embedData.fields[10].value.split(",")[0],
+        price: embedData.fields[11].value,
+        checkout_link: embedData.fields[-1].value.slice(2, -2),
+        message_link: messageObj.url,
       });
     }
     lastMessageId = messages.last()?.id;
