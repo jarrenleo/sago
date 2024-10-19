@@ -11,7 +11,7 @@ config();
 const channels = {
   first: "1246706370049216564",
   "1a": "1246706524735279144",
-  secondary: "1296405496038817812",
+  second: "1296405496038817812",
   third: "1246706689508511825",
   fufillPo: "1246706908354576444",
 };
@@ -44,7 +44,12 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
   while (!expiredCheckout) {
     const options = { limit: 100 };
     if (lastMessageId) options.before = lastMessageId;
+
     const messages = await channel.messages.fetch(options);
+    if (!messages.size) {
+      expiredCheckout = true;
+      return data;
+    }
 
     for (const message of messages) {
       const messageObj = message[1];
@@ -138,7 +143,7 @@ async function main() {
       results = await Promise.allSettled([
         fetchAndFilterMessages(client, channels.first, cartTTL, eventId),
         fetchAndFilterMessages(client, channels["1a"], cartTTL, eventId),
-        fetchAndFilterMessages(client, channels.secondary, cartTTL, eventId),
+        fetchAndFilterMessages(client, channels.second, cartTTL, eventId),
         fetchAndFilterMessages(client, channels.third, cartTTL, eventId),
         fetchAndFilterMessages(client, channels["fufillPo"], cartTTL, eventId),
       ]);
