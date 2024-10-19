@@ -72,8 +72,8 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
         promo_code: embedData.fields[9].value.slice(2, -2),
         location: embedData.fields[10].value.split(",")[0],
         price: embedData.fields[11].value,
-        checkout_link: embedData.fields[-1].value.slice(2, -2),
-        message_link: messageObj.url,
+        checkout_link: embedData.fields.at(-1).value.slice(2, -2),
+        message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
       });
     }
     lastMessageId = messages.last()?.id;
