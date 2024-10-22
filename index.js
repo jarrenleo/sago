@@ -48,6 +48,7 @@ function extractEmbedEventId(channelId, embedFields) {
 
 function extractEmbedFieldsData(channelId, channelName, embedData, messageObj) {
   const embedFields = embedData.fields;
+  const messageLink = `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`;
 
   if (channelId === tSplashChannelId) {
     const seatInfo = embedFields[6].value.split("\n");
@@ -64,7 +65,7 @@ function extractEmbedFieldsData(channelId, channelName, embedData, messageObj) {
       price: embedFields[5].value,
       checkout_link: embedData.url,
       cookie: embedFields[9].value,
-      message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
+      message_link: messageLink,
     };
   }
 
@@ -79,7 +80,7 @@ function extractEmbedFieldsData(channelId, channelName, embedData, messageObj) {
     location: embedFields[10].value.split(",")[0],
     price: embedFields[11].value,
     checkout_link: embedData.url,
-    message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
+    message_link: messageLink,
   };
 }
 
