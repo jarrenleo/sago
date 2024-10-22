@@ -73,8 +73,10 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
       data.push({
         channel: channel.name,
         session: embedData.fields[4].value,
+        mode: embedData.fields[5].value,
         quantity: embedData.fields[6].value,
         account: embedData.fields[7].value.slice(2, -2),
+        proxy: embedData.fields[8].value.slice(2, -2),
         promo_code: embedData.fields[9].value.slice(2, -2),
         location: embedData.fields[10].value.split(",")[0],
         price: embedData.fields[11].value,
