@@ -9,11 +9,16 @@ import sortBy from "lodash.sortby";
 config();
 
 const channels = {
-  first: "1246706370049216564",
-  "1a": "1246706524735279144",
-  second: "1296405496038817812",
-  third: "1246706689508511825",
-  fufillPo: "1246706908354576444",
+  c1: "1246706370049216564",
+  c2: "1246706524735279144",
+  c3: "1296405496038817812",
+  c4: "1246706689508511825",
+  c5: "1246706908354576444",
+  c6: "1297879088547233842",
+  c7: "1297879193178214452",
+  c8: "1297879210760601691",
+  c9: "1297879257996988438",
+  c10: "1297879412527595561",
 };
 
 function init() {
@@ -66,6 +71,7 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
       if (eventId !== embedEventId) continue;
 
       data.push({
+        channel: channel.name,
         session: embedData.fields[4].value,
         quantity: embedData.fields[6].value,
         account: embedData.fields[7].value.slice(2, -2),
@@ -128,13 +134,11 @@ async function main() {
       ]);
 
     if (m.content.startsWith("!merge"))
-      results = await Promise.allSettled([
-        fetchAndFilterMessages(client, channels.first, cartTTL, eventId),
-        fetchAndFilterMessages(client, channels["1a"], cartTTL, eventId),
-        fetchAndFilterMessages(client, channels.second, cartTTL, eventId),
-        fetchAndFilterMessages(client, channels.third, cartTTL, eventId),
-        fetchAndFilterMessages(client, channels["fufillPo"], cartTTL, eventId),
-      ]);
+      results = await Promise.allSettled(
+        Object.values(channels).map((channelId) =>
+          fetchAndFilterMessages(client, channelId, cartTTL, eventId)
+        )
+      );
 
     for (const result of results) {
       if (result.status === "fulfilled") data.push(...result.value);
