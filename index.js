@@ -46,24 +46,27 @@ function extractEmbedEventId(channelId, embedFields) {
   return embedFields[2].value.toLowerCase();
 }
 
-function extractEmbedFieldsData(
-  channelId,
-  channelName,
-  embedFields,
-  messageObj
-) {
-  if (channelId === tSplashChannelId)
+function extractEmbedFieldsData(channelId, channelName, embedData, messageObj) {
+  const embedFields = embedData.fields;
+
+  if (channelId === tSplashChannelId) {
+    const seatInfo = embedFields[6].value.split("\n");
+    const searchIndex = seatInfo[1].indexOf("-Price");
+
     return {
       channel: channelName,
-      quantity: embedFields[2].value,
+      session: seatInfo[0].trimEnd(),
       mode: embedFields[3].value,
-      proxy: embedFields[4].value.slice(2, -2),
-      price: embedFields[5].value,
-      location: embedFields[6].value,
+      quantity: embedFields[2].value,
       account: embedFields[7].value.slice(2, -2),
+      proxy: embedFields[4].value.slice(2, -2),
+      location: seatInfo[1].slice(0, searchIndex).replace(" , ", "-"),
+      price: embedFields[5].value,
+      checkout_link: embedData.url,
       cookie: embedFields[9].value,
       message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
     };
+  }
 
   return {
     channel: channelName,
@@ -75,7 +78,7 @@ function extractEmbedFieldsData(
     promo_code: embedFields[9].value.slice(2, -2),
     location: embedFields[10].value.split(",")[0],
     price: embedFields[11].value,
-    checkout_link: embedFields.at(-1).value.slice(2, -2),
+    checkout_link: embedData.url,
     message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
   };
 }
@@ -107,12 +110,12 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
         Date.now() - +messageObj.createdTimestamp > cartTTL * 60 * 1000;
       if (expiredCheckout) return data;
 
-      const embedFields = embed[0].data.fields;
-      const embedEventId = extractEmbedEventId(channelId, embedFields);
+      const embedData = embed[0].data;
+      const embedEventId = extractEmbedEventId(channelId, embedData.fields);
       if (eventId !== embedEventId) continue;
 
       data.push(
-        extractEmbedFieldsData(channelId, channel.name, embedFields, messageObj)
+        extractEmbedFieldsData(channelId, channel.name, embedData, messageObj)
       );
     }
     lastMessageId = messages.last()?.id;
