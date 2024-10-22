@@ -20,6 +20,7 @@ const channels = {
   c9: "1297879257996988438",
   c10: "1297879412527595561",
 };
+const tSplashChannelId = "1214264843658469396";
 
 function init() {
   const client = new Client({
@@ -37,6 +38,47 @@ function init() {
 function checkCartTTL(string) {
   const regex = /^\d+m$/;
   return regex.test(string);
+}
+
+function extractEmbedEventId(channelId, embedFields) {
+  if (channelId === tSplashChannelId) return embedFields[1].value.toLowerCase();
+
+  return embedFields[2].value.toLowerCase();
+}
+
+function extractEmbedFieldsData(
+  channelId,
+  channelName,
+  embedFields,
+  messageObj
+) {
+  if (channelId === tSplashChannelId) {
+    return {
+      channel: channelName,
+      quantity: embedFields[2].value,
+      mode: embedFields[3].value,
+      proxy: embedFields[4].value.slice(2, -2),
+      price: embedFields[5].value,
+      location: embedFields[6].value,
+      account: embedFields[7].value.slice(2, -2),
+      cookie: embedFields[9].value,
+      message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
+    };
+  }
+
+  return {
+    channel: channelName,
+    session: embedFields[4].value,
+    mode: embedFields[5].value,
+    quantity: embedFields[6].value,
+    account: embedFields[7].value.slice(2, -2),
+    proxy: embedFields[8].value.slice(2, -2),
+    promo_code: embedFields[9].value.slice(2, -2),
+    location: embedFields[10].value.split(",")[0],
+    price: embedFields[11].value,
+    checkout_link: embedFields.at(-1).value.slice(2, -2),
+    message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
+  };
 }
 
 async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
@@ -67,22 +109,12 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
       if (expiredCheckout) return data;
 
       const embedFields = embed[0].data.fields;
-      const embedEventId = embedFields[2].value.toLowerCase();
+      const embedEventId = extractEmbedEventId(channelId, embedFields);
       if (eventId !== embedEventId) continue;
 
-      data.push({
-        channel: channel.name,
-        session: embedFields[4].value,
-        mode: embedFields[5].value,
-        quantity: embedFields[6].value,
-        account: embedFields[7].value.slice(2, -2),
-        proxy: embedFields[8].value.slice(2, -2),
-        promo_code: embedFields[9].value.slice(2, -2),
-        location: embedFields[10].value.split(",")[0],
-        price: embedFields[11].value,
-        checkout_link: embedFields.at(-1).value.slice(2, -2),
-        message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
-      });
+      data.push(
+        extractEmbedFieldsData(channelId, channelName, embedFields, messageObj)
+      );
     }
     lastMessageId = messages.last()?.id;
   }
