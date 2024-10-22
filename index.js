@@ -66,21 +66,21 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
         Date.now() - +messageObj.createdTimestamp > cartTTL * 60 * 1000;
       if (expiredCheckout) return data;
 
-      const embedData = embed[0].data;
-      const embedEventId = embedData.fields[2].value.toLowerCase();
+      const embedFields = embed[0].data.fields;
+      const embedEventId = embedFields[2].value.toLowerCase();
       if (eventId !== embedEventId) continue;
 
       data.push({
         channel: channel.name,
-        session: embedData.fields[4].value,
-        mode: embedData.fields[5].value,
-        quantity: embedData.fields[6].value,
-        account: embedData.fields[7].value.slice(2, -2),
-        proxy: embedData.fields[8].value.slice(2, -2),
-        promo_code: embedData.fields[9].value.slice(2, -2),
-        location: embedData.fields[10].value.split(",")[0],
-        price: embedData.fields[11].value,
-        checkout_link: embedData.fields.at(-1).value.slice(2, -2),
+        session: embedFields[4].value,
+        mode: embedFields[5].value,
+        quantity: embedFields[6].value,
+        account: embedFields[7].value.slice(2, -2),
+        proxy: embedFields[8].value.slice(2, -2),
+        promo_code: embedFields[9].value.slice(2, -2),
+        location: embedFields[10].value.split(",")[0],
+        price: embedFields[11].value,
+        checkout_link: embedFields.at(-1).value.slice(2, -2),
         message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
       });
     }
