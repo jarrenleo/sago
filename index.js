@@ -52,7 +52,7 @@ function extractEmbedFieldsData(
   embedFields,
   messageObj
 ) {
-  if (channelId === tSplashChannelId) {
+  if (channelId === tSplashChannelId)
     return {
       channel: channelName,
       quantity: embedFields[2].value,
@@ -64,7 +64,6 @@ function extractEmbedFieldsData(
       cookie: embedFields[9].value,
       message_link: `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`,
     };
-  }
 
   return {
     channel: channelName,
@@ -113,7 +112,7 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
       if (eventId !== embedEventId) continue;
 
       data.push(
-        extractEmbedFieldsData(channelId, channelName, embedFields, messageObj)
+        extractEmbedFieldsData(channelId, channel.name, embedFields, messageObj)
       );
     }
     lastMessageId = messages.last()?.id;
