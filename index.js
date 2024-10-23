@@ -79,7 +79,7 @@ function extractEmbedFieldsData(channelId, channelName, embedData, messageObj) {
     promo_code: embedFields[9].value.slice(2, -2),
     location: embedFields[10].value.split(",")[0],
     price: embedFields[11].value,
-    checkout_link: embedData.url,
+    checkout_link: embedFields.at(-1).value.slice(2, -2),
     message_link: messageLink,
   };
 }
