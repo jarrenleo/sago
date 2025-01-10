@@ -109,10 +109,18 @@ function extractFieldData(channelId, channelName, embedData, messageObject) {
     return acc;
   }, {});
 
+  if (embedData.url)
+    return {
+      Channel: channelName,
+      "Checkout Link": embedData.url,
+      "Message Link": messageLink,
+      ...extractedFields,
+    };
+
   return {
     Channel: channelName,
-    ...extractedFields,
     "Message Link": messageLink,
+    ...extractedFields,
   };
 }
 
