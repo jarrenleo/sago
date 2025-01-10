@@ -9,20 +9,33 @@ import sortBy from "lodash.sortby";
 config();
 
 const channels = {
-  c1: "1246706370049216564",
-  c2: "1246706524735279144",
-  c3: "1296405496038817812",
-  c4: "1246706689508511825",
-  c5: "1246706908354576444",
-  c6: "1297879088547233842",
-  c7: "1297879193178214452",
-  c8: "1297879210760601691",
-  c9: "1297879257996988438",
-  c10: "1297879412527595561",
+  POPMART: [
+    "1300043362920824843",
+    "1315619535075803207",
+    "1319343319322460160",
+  ],
+  TKT: [
+    "1246706370049216564",
+    "1246706524735279144",
+    "1296405496038817812",
+    "1246706689508511825",
+    "1246706908354576444",
+    "1297879088547233842",
+    "1297879193178214452",
+    "1297879210760601691",
+    "1297879257996988438",
+    "1297879412527595561",
+  ],
+  TSPLASH: ["1214264843658469396"],
+  XBOT: ["1179970401468690432", "1214265334572384326"],
 };
-const tSplashChannelId = "1214264843658469396";
 
-function init() {
+const POPMART_CHANNEL_ID_SET = new Set(channels.POPMART);
+const TKT_CHANNEL_ID_SET = new Set(channels.TKT);
+const TSPLASH_CHANNEL_ID_SET = new Set(channels.TSPLASH);
+const XBOT_CHANNEL_ID_SET = new Set(channels.XBOT);
+
+function initialiseClient() {
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -40,51 +53,70 @@ function checkCartTTL(string) {
   return regex.test(string);
 }
 
-function extractEmbedEventId(channelId, embedFields) {
-  if (channelId === tSplashChannelId) return embedFields[1].value.toLowerCase();
-
-  return embedFields[2].value.toLowerCase();
+function hasMatchingEventId(targetEventId, embedFields) {
+  for (const field of embedFields) {
+    if (
+      field.name.toLowerCase().includes("event") &&
+      field.value.toLowerCase().includes(targetEventId)
+    )
+      return true;
+  }
+  return false;
 }
 
-function extractEmbedFieldsData(channelId, channelName, embedData, messageObj) {
+function replacePopmartField(value) {
+  return value
+    .replace(/^\|\|(.*)\|\|$/, "$1")
+    .replace(/\[CLICK\]\((.*?)\)/, "$1")
+    .replace(/[()]/g, "");
+}
+
+function replaceTktField(value) {
+  return value.replace(/^\|\|(.*)\|\|$/, "$1").replace(/,/g, " &");
+}
+
+function replaceTSplashField(value) {
+  return value
+    .replace(/^\|\|(.*)\|\|$/, "$1")
+    .replace(/,/g, "&")
+    .replace(/\n/g, " ");
+}
+
+function replaceXBotField(value) {
+  return value
+    .replace(/^\|\|(.*)\|\|$/, "$1")
+    .replace(/```/g, "")
+    .replace(/\n/g, " ")
+    .replace(/\[Payment Link\]\((.*?)\)/, "$1");
+}
+
+function extractFieldData(channelId, channelName, embedData, messageObject) {
   const embedFields = embedData.fields;
-  const messageLink = `https://discord.com/channels/${messageObj.guildId}/${channelId}/${messageObj.id}`;
+  const messageLink = `https://discord.com/channels/${messageObject.guildId}/${channelId}/${messageObject.id}`;
 
-  if (channelId === tSplashChannelId) {
-    const seatInfo = embedFields[6].value.split("\n");
-    const searchIndex = seatInfo[1].indexOf("-Price");
+  const extractedFields = embedFields.reduce((acc, field) => {
+    let value;
+    if (POPMART_CHANNEL_ID_SET.has(channelId))
+      value = replacePopmartField(field.value);
+    if (TKT_CHANNEL_ID_SET.has(channelId)) value = replaceTktField(field.value);
+    if (TSPLASH_CHANNEL_ID_SET.has(channelId))
+      value = replaceTSplashField(field.value);
+    if (XBOT_CHANNEL_ID_SET.has(channelId))
+      value = replaceXBotField(field.value);
 
-    return {
-      channel: channelName,
-      session: seatInfo[0].trimEnd(),
-      mode: embedFields[3].value,
-      quantity: embedFields[2].value,
-      account: embedFields[7].value.slice(2, -2),
-      proxy: embedFields[4].value.slice(2, -2),
-      location: seatInfo[1].slice(0, searchIndex).replace(" , ", "-"),
-      price: embedFields[5].value,
-      checkout_link: embedData.url,
-      cookie: embedFields[9].value,
-      message_link: messageLink,
-    };
-  }
+    acc[field.name] = value;
+
+    return acc;
+  }, {});
 
   return {
-    channel: channelName,
-    session: embedFields[4].value,
-    mode: embedFields[5].value,
-    quantity: embedFields[6].value,
-    account: embedFields[7].value.slice(2, -2),
-    proxy: embedFields[8].value.slice(2, -2),
-    promo_code: embedFields[9].value.slice(2, -2),
-    location: embedFields[10].value.split(",")[0],
-    price: embedFields[11].value,
-    checkout_link: embedFields.at(-1).value.slice(2, -2),
-    message_link: messageLink,
+    Channel: channelName,
+    ...extractedFields,
+    "Message Link": messageLink,
   };
 }
 
-async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
+async function fetchMessages(client, channelId, cartTTL, eventId) {
   const channel = await client.channels.fetch(channelId);
 
   const data = [];
@@ -92,7 +124,7 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
   let lastMessageId;
 
   while (!expiredCheckout) {
-    const options = { limit: 100 };
+    const options = { limit: 10 };
     if (lastMessageId) options.before = lastMessageId;
 
     const messages = await channel.messages.fetch(options);
@@ -102,25 +134,31 @@ async function fetchAndFilterMessages(client, channelId, cartTTL, eventId) {
     }
 
     for (const message of messages) {
-      const messageObj = message[1];
+      const messageObject = message[1];
 
-      const embed = messageObj.embeds;
+      const embed = messageObject.embeds;
       if (!embed.length) continue;
 
       expiredCheckout =
-        Date.now() - +messageObj.createdTimestamp > cartTTL * 60 * 1000;
+        Date.now() - +messageObject.createdTimestamp > cartTTL * 60 * 1000;
       if (expiredCheckout) return data;
 
       const embedData = embed[0].data;
-      const embedEventId = extractEmbedEventId(channelId, embedData.fields);
-      if (eventId !== embedEventId) continue;
+      if (POPMART_CHANNEL_ID_SET.has(channelId)) {
+        data.push(
+          extractFieldData(channelId, channel.name, embedData, messageObject)
+        );
+        continue;
+      }
 
+      if (!hasMatchingEventId(eventId, embedData.fields)) continue;
       data.push(
-        extractEmbedFieldsData(channelId, channel.name, embedData, messageObj)
+        extractFieldData(channelId, channel.name, embedData, messageObject)
       );
     }
     lastMessageId = messages.last()?.id;
   }
+  return data;
 }
 
 function convertToCSV(data) {
@@ -128,69 +166,140 @@ function convertToCSV(data) {
   return array.map((it) => Object.values(it).toString()).join("\n");
 }
 
-function sendCSV(m, eventId, cartTTL, csv) {
+async function sendDM(m, eventId, cartTTL, csv) {
   const buffer = Buffer.from(csv, "utf-8");
   const attachment = new AttachmentBuilder(buffer, {
-    name: `tickets_${eventId}_${cartTTL}.csv`,
+    name: `${eventId}_${cartTTL}.csv`,
   });
 
-  m.reply({
+  const userDM = await m.author.createDM();
+  userDM.send({
     files: [attachment],
   });
 }
 
-function sendError(m, errorMessage) {
+function sendErrorMessage(m, errorMessage) {
   m.reply({ content: errorMessage });
 }
 
 async function main() {
-  const client = init();
+  const client = initialiseClient();
 
   client.on(Events.MessageCreate, async (m) => {
-    if (!m.content.startsWith("!sort") && !m.content.startsWith("!merge"))
-      return;
+    // Extract
+    if (m.content.startsWith("!extract")) {
+      if (!POPMART_CHANNEL_ID_SET.has(m.channelId)) {
+        sendErrorMessage(m, "Please use this command in a popmart channel.");
+        return;
+      }
 
-    const [_, eventIdString, cartTTLString] = m.content.trim().split(" ");
-    if (!eventIdString) {
-      sendError(m, "Please specify event ID.");
-      return;
-    }
-    if (!checkCartTTL(cartTTLString)) {
-      sendError(m, "Please specify cart time to live. E.g. 1m.");
-      return;
-    }
+      const [_, cartTTLString] = m.content.trim().split(" ");
+      if (!checkCartTTL(cartTTLString)) {
+        sendErrorMessage(m, "Please specify cart time to live. E.g. 1m.");
+        return;
+      }
 
-    const data = [];
-    const eventId = eventIdString.toLowerCase();
-    const cartTTL = +cartTTLString.slice(0, -1);
-    let results;
+      const cartTTL = +cartTTLString.slice(0, -1);
+      const data = await fetchMessages(client, m.channelId, cartTTL);
+      if (!data.length) {
+        sendErrorMessage(
+          m,
+          `No available products found in the last ${cartTTLString}.`
+        );
+        return;
+      }
 
-    if (m.content.startsWith("!sort"))
-      results = await Promise.allSettled([
-        fetchAndFilterMessages(client, m.channelId, cartTTL, eventId),
-      ]);
-
-    if (m.content.startsWith("!merge"))
-      results = await Promise.allSettled(
-        Object.values(channels).map((channelId) =>
-          fetchAndFilterMessages(client, channelId, cartTTL, eventId)
-        )
-      );
-
-    for (const result of results) {
-      if (result.status === "fulfilled") data.push(...result.value);
-    }
-    if (!data.length) {
-      sendError(
-        m,
-        `No available tickets found for ${eventIdString} in the last ${cartTTLString}.`
-      );
-      return;
+      const csv = convertToCSV(data);
+      await sendDM(m, "Popmart", cartTTLString, csv);
     }
 
-    const sortedData = sortBy(data, ["location"]);
-    const csv = convertToCSV(sortedData);
-    sendCSV(m, eventIdString, cartTTLString, csv);
+    if (m.content.startsWith("!sort") || m.content.startsWith("!merge")) {
+      if (
+        !TKT_CHANNEL_ID_SET.has(m.channelId) &&
+        !TSPLASH_CHANNEL_ID_SET.has(m.channelId) &&
+        !XBOT_CHANNEL_ID_SET.has(m.channelId)
+      ) {
+        sendErrorMessage(
+          m,
+          "Please use this command in a supported ticket channel."
+        );
+        return;
+      }
+
+      const [_, eventIdString, cartTTLString] = m.content.trim().split(" ");
+      if (!eventIdString) {
+        sendErrorMessage(m, "Please specify event ID.");
+        return;
+      }
+      if (!checkCartTTL(cartTTLString)) {
+        sendErrorMessage(m, "Please specify cart time to live. E.g. 1m.");
+        return;
+      }
+
+      const eventId = eventIdString.toLowerCase();
+      const cartTTL = +cartTTLString.slice(0, -1);
+      const noAvailableTicketsMessage = `No available tickets found for ${eventIdString} in the last ${cartTTLString}.`;
+
+      // Sort
+      if (m.content.startsWith("!sort")) {
+        const data = await fetchMessages(client, m.channelId, cartTTL, eventId);
+        if (!data.length) {
+          sendErrorMessage(m, noAvailableTicketsMessage);
+          return;
+        }
+
+        let sortedData;
+
+        if (TKT_CHANNEL_ID_SET.has(m.channelId))
+          sortedData = sortBy(data, ["Location"]);
+        if (TSPLASH_CHANNEL_ID_SET.has(m.channelId))
+          sortedData = sortBy(data, ["Seat Info"]);
+        if (XBOT_CHANNEL_ID_SET.has(m.channelId))
+          sortedData = sortBy(data, ["Seat No"]);
+
+        const csv = convertToCSV(sortedData);
+        await sendDM(m, eventIdString, cartTTLString, csv);
+      }
+
+      // Merge
+      if (m.content.startsWith("!merge")) {
+        let results;
+        const data = [];
+
+        if (TKT_CHANNEL_ID_SET.has(m.channelId))
+          results = await Promise.allSettled(
+            channels.TKT.map((channelId) =>
+              fetchMessages(client, channelId, cartTTL, eventId)
+            )
+          );
+
+        if (TSPLASH_CHANNEL_ID_SET.has(m.channelId))
+          results = await Promise.allSettled(
+            channels.TSPLASH.map((channelId) =>
+              fetchMessages(client, channelId, cartTTL, eventId)
+            )
+          );
+
+        if (XBOT_CHANNEL_ID_SET.has(m.channelId))
+          results = await Promise.allSettled(
+            channels.XBOT.map((channelId) =>
+              fetchMessages(client, channelId, cartTTL, eventId)
+            )
+          );
+
+        for (const result of results) {
+          if (result.status === "fulfilled") data.push(...result.value);
+        }
+
+        if (!data.length) {
+          sendErrorMessage(m, noAvailableTicketsMessage);
+          return;
+        }
+
+        const csv = convertToCSV(data);
+        await sendDM(m, eventIdString, cartTTLString, csv);
+      }
+    }
   });
 }
 
