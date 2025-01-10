@@ -177,7 +177,7 @@ function convertToCSV(data) {
 async function sendDM(m, eventId, cartTTL, csv) {
   const buffer = Buffer.from(csv, "utf-8");
   const attachment = new AttachmentBuilder(buffer, {
-    name: `${eventId}_${cartTTL}.csv`,
+    name: `${eventId}_${cartTTL}_${Date.now()}.csv`,
   });
 
   const userDM = await m.author.createDM();
