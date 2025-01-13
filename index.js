@@ -113,7 +113,7 @@ function extractFieldData(channelId, channelName, embedData, messageObject) {
   if (embedData.url)
     return {
       Channel: channelName,
-      "Checkout Link": embedData.url,
+      "ATC Link": embedData.url,
       "Message Link": messageLink,
       ...extractedFields,
     };
