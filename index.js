@@ -27,7 +27,7 @@ const channels = {
     "1297879412527595561",
   ],
   TSPLASH: ["1214264843658469396"],
-  XBOT: ["1179970401468690432", "1214265334572384326"],
+  XBOT: ["1179970401468690432", "1326218929487482981", "1214265334572384326"],
 };
 
 const POPMART_CHANNEL_ID_SET = new Set(channels.POPMART);
@@ -86,6 +86,7 @@ function replaceXBotField(value) {
   return value
     .replace(/^\|\|(.*)\|\|$/, "$1")
     .replace(/```/g, "")
+    .replace(/,/g, "&")
     .replace(/\n/g, " ")
     .replace(/\[Payment Link\]\((.*?)\)/, "$1");
 }
