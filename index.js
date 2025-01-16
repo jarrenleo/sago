@@ -54,6 +54,8 @@ function checkCartTTL(string) {
 }
 
 function hasMatchingEventId(targetEventId, embedFields) {
+  if (!embedFields) return false;
+
   for (const field of embedFields) {
     if (
       field.name.toLowerCase().includes("event") &&
@@ -133,7 +135,7 @@ async function fetchMessages(client, channelId, cartTTL, eventId) {
   let lastMessageId;
 
   while (!expiredCheckout) {
-    const options = { limit: 10 };
+    const options = { limit: 100 };
     if (lastMessageId) options.before = lastMessageId;
 
     const messages = await channel.messages.fetch(options);
@@ -160,14 +162,13 @@ async function fetchMessages(client, channelId, cartTTL, eventId) {
         continue;
       }
 
-      if (!hasMatchingEventId(eventId, embedData.fields)) continue;
+      if (!hasMatchingEventId(eventId, embedData?.fields)) continue;
       data.push(
         extractFieldData(channelId, channel.name, embedData, messageObject)
       );
     }
     lastMessageId = messages.last()?.id;
   }
-  return data;
 }
 
 function convertToCSV(data) {

@@ -1,6 +1,6 @@
 {
-  "name": "best_tickets",
-  "version": "1.0.12",
+  "name": "sago",
+  "version": "1.0.13",
   "main": "index.js",
   "type": "module",
   "scripts": {
