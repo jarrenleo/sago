@@ -48,7 +48,7 @@ export default async function getBalances() {
 
   const balances = results.map((result) => {
     return result.status === "fulfilled" && result.value
-      ? result.value.toFixed(2)
+      ? `$${result.value.toFixed(2)}`
       : "-";
   });
 

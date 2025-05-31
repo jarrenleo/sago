@@ -73,7 +73,7 @@ function startStatusUpdateInterval(client, intervalMinutes) {
       ] = await getBalances();
 
       client.user.setActivity(
-        `2Captcha: $${twoCaptchaBalance}\nCapMonster: $${capMonsterBalance}\nCapSolver: $${capSolverBalance}\nSMSActivate: $${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString()}`,
+        `2Captcha: ${twoCaptchaBalance}\nCapMonster: ${capMonsterBalance}\nCapSolver: ${capSolverBalance}\nSMSActivate: ${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString()}`,
         {
           type: ActivityType.Watching,
         }
