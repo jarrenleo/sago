@@ -276,7 +276,7 @@ async function main() {
         await getBalances();
 
       m.reply(
-        `CapMonster: ${capMonsterBalance}\nCapSolver: ${capSolverBalance}\nSMSActivate: ${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString()}`
+        `CapMonster: ${capMonsterBalance}\nCapSolver: ${capSolverBalance}\nSMSActivate: ${smsActivateBalance}`
       );
       return;
     }
