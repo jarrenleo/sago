@@ -11,7 +11,7 @@ import sortBy from "lodash.sortby";
 config();
 
 let statusUpdateInterval = null;
-let currentIntervalDuration = 5;
+let currentIntervalDuration = 1;
 
 const channels = {
   POPMART: [
@@ -69,7 +69,10 @@ function startStatusUpdateInterval(client, intervalMinutes) {
         await getBalances();
 
       client.user.setActivity(
-        `CapMonster: ${capMonsterBalance}\nCapSolver: ${capSolverBalance}\nSMSActivate: ${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString()}`,
+        `CapMonster: ${capMonsterBalance}\nCapSolver: ${capSolverBalance}\nSMSActivate: ${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString(
+          "en-US",
+          { timeZone: "Asia/Singapore" }
+        )}`,
         {
           type: ActivityType.Watching,
         }
@@ -271,6 +274,7 @@ async function main() {
       return;
     }
 
+    // Get Balances
     if (m.content.startsWith("!balance")) {
       const [capMonsterBalance, capSolverBalance, smsActivateBalance] =
         await getBalances();
