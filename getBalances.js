@@ -32,10 +32,6 @@ async function fetchSMSActivateBalance() {
 export default async function getBalances() {
   const results = await Promise.allSettled([
     fetchCaptchaSolverBalance(
-      "https://api.2captcha.com/getBalance",
-      process.env["2CAPTCHA_API_KEY"]
-    ),
-    fetchCaptchaSolverBalance(
       "https://api.capmonster.cloud/getBalance",
       process.env["CAPMONSTER_API_KEY"]
     ),
