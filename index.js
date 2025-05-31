@@ -10,8 +10,8 @@ import getBalances from "./getBalances.js";
 import sortBy from "lodash.sortby";
 config();
 
-let statusUpdateInterval = null;
-let currentIntervalDuration = 1;
+// let statusUpdateInterval = null;
+// let currentIntervalDuration = 1;
 
 const channels = {
   POPMART: [
@@ -53,37 +53,37 @@ function initialiseClient() {
   return client;
 }
 
-function checkIntervalDuration(string) {
-  const regex = /^\d+m$/;
-  const minutes = parseInt(string.slice(0, -1));
+// function checkIntervalDuration(string) {
+//   const regex = /^\d+m$/;
+//   const minutes = parseInt(string.slice(0, -1));
 
-  return regex.test(string) && minutes >= 1;
-}
+//   return regex.test(string) && minutes >= 1;
+// }
 
-function startStatusUpdateInterval(client, intervalMinutes) {
-  if (statusUpdateInterval) clearInterval(statusUpdateInterval);
+// function startStatusUpdateInterval(client, intervalMinutes) {
+//   if (statusUpdateInterval) clearInterval(statusUpdateInterval);
 
-  statusUpdateInterval = setInterval(async () => {
-    try {
-      const [capMonsterBalance, capSolverBalance, smsActivateBalance] =
-        await getBalances();
+//   statusUpdateInterval = setInterval(async () => {
+//     try {
+//       const [capMonsterBalance, capSolverBalance, smsActivateBalance] =
+//         await getBalances();
 
-      client.user.setActivity(
-        `CapMonster: ${capMonsterBalance}\nCapSolver: ${capSolverBalance}\nSMSActivate: ${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString(
-          "en-US",
-          { timeZone: "Asia/Singapore" }
-        )}`,
-        {
-          type: ActivityType.Watching,
-        }
-      );
-    } catch (error) {
-      console.error(error.message);
-    }
-  }, 1000 * 60 * intervalMinutes);
+//       client.user.setActivity(
+//         `CapMonster: ${capMonsterBalance}\nCapSolver: ${capSolverBalance}\nSMSActivate: ${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString(
+//           "en-US",
+//           { timeZone: "Asia/Singapore" }
+//         )}`,
+//         {
+//           type: ActivityType.Watching,
+//         }
+//       );
+//     } catch (error) {
+//       console.error(error.message);
+//     }
+//   }, 1000 * 60 * intervalMinutes);
 
-  currentIntervalDuration = intervalMinutes;
-}
+//   currentIntervalDuration = intervalMinutes;
+// }
 
 function checkCartTTL(string) {
   const regex = /^\d+m$/;
@@ -232,47 +232,47 @@ function sendErrorMessage(m, errorMessage) {
 async function main() {
   const client = initialiseClient();
 
-  client.once(Events.ClientReady, () => {
-    startStatusUpdateInterval(client, currentIntervalDuration);
-  });
+  // client.once(Events.ClientReady, () => {
+  //   startStatusUpdateInterval(client, currentIntervalDuration);
+  // });
 
   client.on(Events.MessageCreate, async (m) => {
     // Get Current Interval
-    if (m.content.startsWith("!getinterval")) {
-      m.reply(
-        `Current activity update interval: ${currentIntervalDuration} minute(s).`
-      );
-      return;
-    }
+    // if (m.content.startsWith("!getinterval")) {
+    //   m.reply(
+    //     `Current activity update interval: ${currentIntervalDuration} minute(s).`
+    //   );
+    //   return;
+    // }
 
     // Set Interval
-    if (m.content.startsWith("!setinterval")) {
-      const [_, intervalString] = m.content.trim().split(" ");
+    // if (m.content.startsWith("!setinterval")) {
+    //   const [_, intervalString] = m.content.trim().split(" ");
 
-      if (!intervalString) {
-        sendErrorMessage(
-          m,
-          "Please specify an interval duration. E.g. !setinterval 3m"
-        );
-        return;
-      }
+    //   if (!intervalString) {
+    //     sendErrorMessage(
+    //       m,
+    //       "Please specify an interval duration. E.g. !setinterval 3m"
+    //     );
+    //     return;
+    //   }
 
-      if (!checkIntervalDuration(intervalString)) {
-        sendErrorMessage(
-          m,
-          "Please specify a valid interval duration. E.g. !setinterval 3m"
-        );
-        return;
-      }
+    //   if (!checkIntervalDuration(intervalString)) {
+    //     sendErrorMessage(
+    //       m,
+    //       "Please specify a valid interval duration. E.g. !setinterval 3m"
+    //     );
+    //     return;
+    //   }
 
-      const intervalMinutes = parseInt(intervalString.slice(0, -1));
-      startStatusUpdateInterval(client, intervalMinutes);
+    //   const intervalMinutes = parseInt(intervalString.slice(0, -1));
+    //   startStatusUpdateInterval(client, intervalMinutes);
 
-      m.reply(
-        `Activity update interval changed to ${intervalMinutes} minute(s).`
-      );
-      return;
-    }
+    //   m.reply(
+    //     `Activity update interval changed to ${intervalMinutes} minute(s).`
+    //   );
+    //   return;
+    // }
 
     // Get Balances
     if (m.content.startsWith("!balance")) {
