@@ -271,6 +271,16 @@ async function main() {
       return;
     }
 
+    if (m.content.startsWith("!balance")) {
+      const [capMonsterBalance, capSolverBalance, smsActivateBalance] =
+        await getBalances();
+
+      m.reply(
+        `CapMonster: ${capMonsterBalance}\nCapSolver: ${capSolverBalance}\nSMSActivate: ${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString()}`
+      );
+      return;
+    }
+
     // Extract
     if (m.content.startsWith("!extract")) {
       if (!POPMART_CHANNEL_ID_SET.has(m.channelId)) {
