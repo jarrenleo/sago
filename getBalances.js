@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 config();
 
-async function fetchBalance(url, apiKey) {
+async function fetchCaptchaSolverBalance(url, apiKey) {
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -18,24 +18,38 @@ async function fetchBalance(url, apiKey) {
   return data.balance;
 }
 
-export default async function getCaptchaSolverBalances() {
+async function fetchSMSActivateBalance() {
+  const response = await fetch(
+    `https://api.sms-activate.ae/stubs/handler_api.php?api_key=${process.env.SMSACTIVATE_API_KEY}&action=getBalance`
+  );
+  const data = await response.text();
+
+  const balance = +data.split(":")[1];
+
+  return balance;
+}
+
+export default async function getBalances() {
   const results = await Promise.allSettled([
-    fetchBalance(
+    fetchCaptchaSolverBalance(
       "https://api.2captcha.com/getBalance",
       process.env["2CAPTCHA_API_KEY"]
     ),
-    fetchBalance(
+    fetchCaptchaSolverBalance(
       "https://api.capmonster.cloud/getBalance",
       process.env["CAPMONSTER_API_KEY"]
     ),
-    fetchBalance(
+    fetchCaptchaSolverBalance(
       "https://api.capsolver.com/getBalance",
       process.env["CAPSOLVER_API_KEY"]
     ),
+    fetchSMSActivateBalance(),
   ]);
 
   const balances = results.map((result) => {
-    return result.status === "fulfilled" ? result.value.toFixed(2) : "-";
+    return result.status === "fulfilled" && result.value
+      ? result.value.toFixed(2)
+      : "-";
   });
 
   return balances;

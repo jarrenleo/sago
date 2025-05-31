@@ -6,9 +6,12 @@ import {
   AttachmentBuilder,
   ActivityType,
 } from "discord.js";
-import getCaptchaSolverBalances from "./getCaptchaSolverBalances.js";
+import getBalances from "./getBalances.js";
 import sortBy from "lodash.sortby";
 config();
+
+let statusUpdateInterval = null;
+let currentIntervalDuration = 5;
 
 const channels = {
   POPMART: [
@@ -48,6 +51,39 @@ function initialiseClient() {
   client.login(process.env.DISCORD_TOKEN);
 
   return client;
+}
+
+function checkIntervalDuration(string) {
+  const regex = /^\d+m$/;
+  const minutes = parseInt(string.slice(0, -1));
+
+  return regex.test(string) && minutes >= 1;
+}
+
+function startStatusUpdateInterval(client, intervalMinutes) {
+  if (statusUpdateInterval) clearInterval(statusUpdateInterval);
+
+  statusUpdateInterval = setInterval(async () => {
+    try {
+      const [
+        twoCaptchaBalance,
+        capMonsterBalance,
+        capSolverBalance,
+        smsActivateBalance,
+      ] = await getBalances();
+
+      client.user.setActivity(
+        `2Captcha: $${twoCaptchaBalance}\nCapMonster: $${capMonsterBalance}\nCapSolver: $${capSolverBalance}\nSMSActivate: $${smsActivateBalance}\n\nLast updated: ${new Date().toLocaleString()}`,
+        {
+          type: ActivityType.Watching,
+        }
+      );
+    } catch (error) {
+      console.error(error.message);
+    }
+  }, 1000 * 60 * intervalMinutes);
+
+  currentIntervalDuration = intervalMinutes;
 }
 
 function checkCartTTL(string) {
@@ -198,24 +234,47 @@ async function main() {
   const client = initialiseClient();
 
   client.once(Events.ClientReady, () => {
-    setInterval(async () => {
-      const [twoCaptchaBalance, capMonsterBalance, capSolverBalance] =
-        await getCaptchaSolverBalances();
-
-      client.user.setPresence({
-        activities: [
-          {
-            name: `2Captcha: $${twoCaptchaBalance}\n CapMonster: $${capMonsterBalance}\n CapSolver: $${capSolverBalance}`,
-            type: ActivityType.Watching,
-          },
-        ],
-      });
-    }, 1000 * 60 * 5);
-
-    return client;
+    startStatusUpdateInterval(client, currentIntervalDuration);
   });
 
   client.on(Events.MessageCreate, async (m) => {
+    // Get Current Interval
+    if (m.content.startsWith("!getinterval")) {
+      m.reply(
+        `Current activity update interval: ${currentIntervalDuration} minute(s).`
+      );
+      return;
+    }
+
+    // Set Interval
+    if (m.content.startsWith("!setinterval")) {
+      const [_, intervalString] = m.content.trim().split(" ");
+
+      if (!intervalString) {
+        sendErrorMessage(
+          m,
+          "Please specify an interval duration. E.g. !setinterval 3m"
+        );
+        return;
+      }
+
+      if (!checkIntervalDuration(intervalString)) {
+        sendErrorMessage(
+          m,
+          "Please specify a valid interval duration. E.g. !setinterval 3m"
+        );
+        return;
+      }
+
+      const intervalMinutes = parseInt(intervalString.slice(0, -1));
+      startStatusUpdateInterval(client, intervalMinutes);
+
+      m.reply(
+        `Activity update interval changed to ${intervalMinutes} minute(s).`
+      );
+      return;
+    }
+
     // Extract
     if (m.content.startsWith("!extract")) {
       if (!POPMART_CHANNEL_ID_SET.has(m.channelId)) {
