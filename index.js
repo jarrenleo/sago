@@ -4,7 +4,9 @@ import {
   GatewayIntentBits,
   Events,
   AttachmentBuilder,
+  ActivityType,
 } from "discord.js";
+import getCaptchaSolverBalances from "./getCaptchaSolverBalances.js";
 import sortBy from "lodash.sortby";
 config();
 
@@ -194,6 +196,24 @@ function sendErrorMessage(m, errorMessage) {
 
 async function main() {
   const client = initialiseClient();
+
+  client.once(Events.ClientReady, () => {
+    setInterval(async () => {
+      const [twoCaptchaBalance, capMonsterBalance, capSolverBalance] =
+        await getCaptchaSolverBalances();
+
+      client.user.setPresence({
+        activities: [
+          {
+            name: `2Captcha: $${twoCaptchaBalance}\n CapMonster: $${capMonsterBalance}\n CapSolver: $${capSolverBalance}`,
+            type: ActivityType.Watching,
+          },
+        ],
+      });
+    }, 1000 * 60 * 5);
+
+    return client;
+  });
 
   client.on(Events.MessageCreate, async (m) => {
     // Extract

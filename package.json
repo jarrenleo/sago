@@ -1,6 +1,6 @@
 {
   "name": "sago",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -12,8 +12,8 @@
   "license": "ISC",
   "description": "Discord bot script that finds the best tickets for a given event ID and cart time to live.",
   "dependencies": {
-    "discord.js": "^14.17.3",
-    "dotenv": "^16.4.7",
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.5.0",
     "lodash.sortby": "^4.7.0"
   }
 }
